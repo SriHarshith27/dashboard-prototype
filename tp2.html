@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zero Trust - Security Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #121218;
+            --bg-secondary: #1a1a24;
+            --bg-tertiary: #22222e;
+            --accent-primary: #4a6bff;
+            --accent-secondary: #2a4bdf;
+            --text-primary: #e6e6e6;
+            --text-secondary: #a0a0a0;
+            --text-tertiary: #707070;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --success: #2ed573;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background-color: var(--bg-secondary);
+            padding: 1.5rem 1rem;
+            transition: all var(--transition-speed) ease;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-y: auto;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background-color: rgba(74, 107, 255, 0.15);
+            color: var(--accent-primary);
+        }
+
+        .nav-item i {
+            font-size: 1.25rem;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 1.5rem 0 0.5rem 1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        .search-bar {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent-primary);
+        }
+
+        .dashboard-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            transition: transform var(--transition-speed) ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            font-size: 1.25rem;
+        }
+
+        .stat-icon.primary {
+            background-color: rgba(74, 107, 255, 0.15);
+            color: var(--accent-primary);
+        }
+
+        .stat-icon.danger {
+            background-color: rgba(255, 71, 87, 0.15);
+            color: var(--danger);
+        }
+
+        .stat-icon.warning {
+            background-color: rgba(255, 165, 2, 0.15);
+            color: var(--warning);
+        }
+
+        .stat-icon.success {
+            background-color: rgba(46, 213, 115, 0.15);
+            color: var(--success);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 1.5rem;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title .actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .card-title .actions i {
+            cursor: pointer;
+            color: var(--text-tertiary);
+            transition: all var(--transition-speed) ease;
+        }
+
+        .card-title .actions i:hover {
+            color: var(--text-primary);
+        }
+
+        .activity-log {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-primary {
+            background-color: rgba(74, 107, 255, 0.15);
+            color: var(--accent-primary);
+        }
+
+        .badge-danger {
+            background-color: rgba(255, 71, 87, 0.15);
+            color: var(--danger);
+        }
+
+        .badge-warning {
+            background-color: rgba(255, 165, 2, 0.15);
+            color: var(--warning);
+        }
+
+        .badge-success {
+            background-color: rgba(46, 213, 115, 0.15);
+            color: var(--success);
+        }
+
+        .security-alerts {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            background-color: var(--bg-tertiary);
+            transition: all var(--transition-speed) ease;
+        }
+
+        .alert-item:hover {
+            transform: translateX(5px);
+        }
+
+        .alert-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-info {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        .alert-action {
+            background: none;
+            border: none;
+            color: var(--accent-primary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .alert-action:hover {
+            text-decoration: underline;
+        }
+
+        .network-map {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 8px;
+            background-color: var(--bg-tertiary);
+        }
+
+        .map-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .connection {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.1);
+            transform-origin: 0 0;
+        }
+
+        .connection.active {
+            background-color: var(--accent-primary);
+            animation: pulse 2s infinite;
+        }
+
+        .connection.warning {
+            background-color: var(--warning);
+        }
+
+        .connection.danger {
+            background-color: var(--danger);
+        }
+
+        .node {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--bg-secondary);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            transition: all var(--transition-speed) ease;
+            border: 2px solid transparent;
+        }
+
+        .node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .node.active {
+            border-color: var(--accent-primary);
+            animation: pulse 2s infinite;
+        }
+
+        .node.warning {
+            border-color: var(--warning);
+        }
+
+        .node.danger {
+            border-color: var(--danger);
+        }
+
+        .node i {
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(74, 107, 255, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(74, 107, 255, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(74, 107, 255, 0);
+            }
+        }
+
+        /* User Profile */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: auto;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            background-color: var(--bg-tertiary);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background-color: var(--accent-primary);
+            display: grid;
+            place-items: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+
+        .user-menu {
+            cursor: pointer;
+            color: var(--text-tertiary);
+            transition: all var(--transition-speed) ease;
+        }
+
+        .user-menu:hover {
+            color: var(--text-primary);
+        }
+
+        /* Animated Elements */
+        .pulsing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .pulsing-dot.danger {
+            background-color: var(--danger);
+            box-shadow: 0 0 0 0 var(--danger);
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 5px rgba(255, 71, 87, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
+            }
+        }
+
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .device-card {
+            background-color: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .device-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .device-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background-color: rgba(74, 107, 255, 0.15);
+            color: var(--accent-primary);
+            display: grid;
+            place-items: center;
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .device-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .device-status {
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo-container">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <span>Zero Trust</span>
+                </div>
+            </div>
+
+            <div class="nav-item active">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>Identity</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-laptop"></i>
+                <span>Devices</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-network-wired"></i>
+                <span>Network</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-database"></i>
+                <span>Applications</span>
+            </div>
+
+            <div class="section-title">Security</div>
+            <div class="nav-item">
+                <i class="fas fa-shield-virus"></i>
+                <span>Threats</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Policies</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-bell"></i>
+                <span>Alerts</span>
+            </div>
+
+            <div class="section-title">Administration</div>
+            <div class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-question-circle"></i>
+                <span>Help</span>
+            </div>
+
+            <div class="user-profile">
+                <div class="user-avatar">AS</div>
+                <div class="user-info">
+                    <div class="user-name">Admin Smith</div>
+                    <div class="user-role">Security Admin</div>
+                </div>
+                <i class="fas fa-ellipsis-v user-menu"></i>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <h1 class="page-title">Zero Trust Dashboard</h1>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search...">
+                </div>
+            </div>
+
+            <div class="dashboard-overview">
+                <div class="card stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Active Users</div>
+                        <div class="stat-icon primary">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">247</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up trend-up"></i>
+                        <span>12% from last week</span>
+                    </div>
+                </div>
+
+                <div class="card stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Security Score</div>
+                        <div class="stat-icon success">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">86%</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up trend-up"></i>
+                        <span>4% from last week</span>
+                    </div>
+                </div>
+
+                <div class="card stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Security Alerts</div>
+                        <div class="stat-icon danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">12</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-down trend-down"></i>
+                        <span>3 less than yesterday</span>
+                    </div>
+                </div>
+
+                <div class="card stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Verified Devices</div>
+                        <div class="stat-icon warning">
+                            <i class="fas fa-laptop"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">342</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up trend-up"></i>
+                        <span>7 new devices today</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-container">
+                <div class="card-title">
+                    <span>Security Events Over Time</span>
+                    <div class="actions">
+                        <i class="fas fa-redo-alt"></i>
+                        <i class="fas fa-ellipsis-v"></i>
+                    </div>
+                </div>
+                <canvas id="securityChart"></canvas>
+            </div>
+
+            <div class="two-column">
+                <div class="card">
+                    <div class="card-title">
+                        <span>Security Alerts</span>
+                        <div class="actions">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    <div class="security-alerts">
+                        <div class="alert-item">
+                            <div class="alert-icon danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">Authentication Anomaly</div>
+                                <div class="alert-info">Multiple failed login attempts from IP 192.168.1.45</div>
+                            </div>
+                            <button class="alert-action">Investigate</button>
+                        </div>
+
+                        <div class="alert-item">
+                            <div class="alert-icon warning">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">Policy Violation</div>
+                                <div class="alert-info">User attempted to access restricted resource</div>
+                            </div>
+                            <button class="alert-action">Review</button>
+                        </div>
+
+                        <div class="alert-item">
+                            <div class="alert-icon warning">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">Unverified Device</div>
+                                <div class="alert-info">New device trying to access network</div>
+                            </div>
+                            <button class="alert-action">Verify</button>
+                        </div>
+
+                        <div class="alert-item">
+                            <div class="alert-icon danger">
+                                <i class="fas fa-virus"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">Potential Malware</div>
+                                <div class="alert-info">Suspicious activity detected on workstation WS-45</div>
+                            </div>
+                            <button class="alert-action">Quarantine</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">
+                        <span>Recent Activity</span>
+                        <div class="actions">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    <div class="activity-log">
+                        <div class="activity-item">
+                            <div class="activity-icon primary">
+                                <i class="fas fa-sign-in-alt"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">User Login</div>
+                                <div class="activity-info">
+                                    <span>John Doe</span>
+                                    <span>•</span>
+                                    <span>2 minutes ago</span>
+                                </div>
+                            </div>
+                            <span class="badge badge-success">Verified</span>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon warning">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">Policy Updated</div>
+                                <div class="activity-info">
+                                    <span>Admin Smith</span>
+                                    <span>•</span>
+                                    <span>1 hour ago</span>
+                                </div>
+                            </div>
+                            <span class="badge badge-primary">Admin</span>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon danger">
+                                <i class="fas fa-ban"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">Access Denied</div>
+                                <div class="activity-info">
+                                    <span>Sarah Johnson</span>
+                                    <span>•</span>
+                                    <span>2 hours ago</span>
+                                </div>
+                            </div>
+                            <span class="badge badge-danger">Blocked</span>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon primary">
+                                <i class="fas fa-laptop"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">New Device Registered</div>
+                                <div class="activity-info">
+                                    <span>Mark Wilson</span>
+                                    <span>•</span>
+                                    <span>3 hours ago</span>
+                                </div>
+                            </div>
+                            <span class="badge badge-warning">Pending</span>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">Security Scan Complete</div>
+                                <div class="activity-info">
+                                    <span>System</span>
+                                    <span>•</span>
+                                    <span>5 hours ago</span>
+                                </div>
+                            </div>
+                            <span class="badge badge-success">Complete</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>Zero Trust Network Map</span>
+                    <div class="actions">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                        <i class="fas fa-ellipsis-v"></i>
+                    </div>
+                </div>
+                <div class="network-map">
+                    <div class="map-container" id="networkMap"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>Connected Devices</span>
+                    <div class="actions">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </div>
+                </div>
+                <div class="device-grid">
+                    <div class="device-card">
+                        <div class="device-icon">
+                            <i class="fas fa-laptop"></i>
+                        </div>
+                        <div class="device-name">Workstation WS-01</div>
+                        <div class="device-status">
+                            <div class="pulsing-dot success"></div>
+                            <span>Compliant</span>
+                        </div>
+                    </div>
+            
+                    <div class="device-card">
+                        <div class="device-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="device-name">iPhone 12 Pro</div>
+                        <div class="device-status">
+                            <div class="pulsing-dot success"></div>
+                            <span>Compliant</span>
+                        </div>
+                    </div>
+            
+                    <div class="device-card">
+                        <div class="device-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        <div class="device-name">Database Server</div>
+                        <div class="device-status">
+                            <div class="pulsing-dot success"></div>
+                            <span>Compliant</span>
+                        </div>
+                    </div>
+            
+                    <div class="device-card">
+                        <div class="device-icon">
+                            <i class="fas fa-desktop"></i>
+                        </div>
+                        <div class="device-name">Workstation WS-45</div>
+                        <div class="device-status">
+                            <div class="pulsing-dot danger"></div>
+                            <span>At Risk</span>
+                        </div>
+                    </div>
+            
+                    <div class="device-card">
+                        <div class="device-icon">
+                            <i class="fas fa-tablet-alt"></i>
+                        </div>
+                        <div class="device-name">iPad Pro</div>
+                        <div class="device-status">
+                            <div class="pulsing-dot success"></div>
+                            <span>Compliant</span>
+                        </div>
+                    </div>
+            
+                    <div class="device-card">
+                        <div class="device-icon">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <div class="device-name">Network Router</div>
+                        <div class="device-status">
+                            <div class="pulsing-dot warning"></div>
+                            <span>Update Required</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+    <script>
+        // Security Events Chart
+        const securityChart = document.getElementById('securityChart').getContext('2d');
+        const myChart = new Chart(securityChart, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [
+                    {
+                        label: 'Authentication Attempts',
+                        data: [65, 59, 80, 81, 56, 55, 40],
+                        borderColor: '#4a6bff',
+                        backgroundColor: 'rgba(74, 107, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Policy Violations',
+                        data: [28, 48, 40, 19, 36, 27, 20],
+                        borderColor: '#ffa502',
+                        backgroundColor: 'rgba(255, 165, 2, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Threat Detections',
+                        data: [12, 19, 3, 5, 2, 3, 7],
+                        borderColor: '#ff4757',
+                        backgroundColor: 'rgba(255, 71, 87, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#a0a0a0'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#707070'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#707070'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Network Map Visualization
+        const networkMap = document.getElementById('networkMap');
+        
+        // Create nodes
+        const nodes = [
+            { id: 'gateway', x: 200, y: 50, icon: 'fas fa-wifi', status: 'active' },
+            { id: 'server1', x: 100, y: 150, icon: 'fas fa-server', status: 'active' },
+            { id: 'server2', x: 300, y: 150, icon: 'fas fa-server', status: 'active' },
+            { id: 'db', x: 200, y: 250, icon: 'fas fa-database', status: 'warning' },
+            { id: 'client1', x: 50, y: 350, icon: 'fas fa-laptop', status: 'active' },
+            { id: 'client2', x: 150, y: 350, icon: 'fas fa-desktop', status: 'danger' },
+            { id: 'client3', x: 250, y: 350, icon: 'fas fa-mobile-alt', status: 'active' },
+            { id: 'client4', x: 350, y: 350, icon: 'fas fa-tablet-alt', status: 'active' }
+        ];
+
+        // Create connections
+        const connections = [
+            { from: 'gateway', to: 'server1', status: 'active' },
+            { from: 'gateway', to: 'server2', status: 'active' },
+            { from: 'server1', to: 'db', status: 'warning' },
+            { from: 'server2', to: 'db', status: 'active' },
+            { from: 'server1', to: 'client1', status: 'active' },
+            { from: 'server1', to: 'client2', status: 'danger' },
+            { from: 'server2', to: 'client3', status: 'active' },
+            { from: 'server2', to: 'client4', status: 'active' }
+        ];
+
+        // Render connections
+        connections.forEach(conn => {
+            const fromNode = nodes.find(n => n.id === conn.from);
+            const toNode = nodes.find(n => n.id === conn.to);
+            
+            if (fromNode && toNode) {
+                const dx = toNode.x - fromNode.x;
+                const dy = toNode.y - fromNode.y;
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                const length = Math.sqrt(dx * dx + dy * dy);
+                
+                const connection = document.createElement('div');
+                connection.className = `connection ${conn.status}`;
+                connection.style.width = `${length}px`;
+                connection.style.height = '2px';
+                connection.style.left = `${fromNode.x}px`;
+                connection.style.top = `${fromNode.y}px`;
+                connection.style.transform = `rotate(${angle}deg)`;
+                networkMap.appendChild(connection);
+            }
+        });
+
+        // Render nodes
+        nodes.forEach(node => {
+            const nodeElement = document.createElement('div');
+            nodeElement.className = `node ${node.status}`;
+            nodeElement.style.left = `${node.x - 20}px`;
+            nodeElement.style.top = `${node.y - 20}px`;
+            
+            const iconElement = document.createElement('i');
+            iconElement.className = node.icon;
+            nodeElement.appendChild(iconElement);
+            
+            networkMap.appendChild(nodeElement);
+
+            // Add tooltip with node information
+            nodeElement.setAttribute('title', node.id);
+            
+            // Add click event for node details
+            nodeElement.addEventListener('click', function() {
+                alert(`Node: ${node.id}\nStatus: ${node.status}`);
+            });
+        });
+
+        // Add event listeners for interactive elements
+        document.querySelectorAll('.alert-action').forEach(button => {
+            button.addEventListener('click', function() {
+                const alertType = this.parentElement.querySelector('.alert-title').textContent;
+                alert(`Action triggered for: ${alertType}`);
+            });
+        });
+
+        // Add search functionality
+        const searchBar = document.querySelector('.search-bar input');
+        searchBar.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                alert(`Searching for: ${this.value}`);
+                this.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
